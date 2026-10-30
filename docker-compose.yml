@@ -1,0 +1,40 @@
+name: harmattan
+
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: harmattan
+      POSTGRES_PASSWORD: harmattan
+      POSTGRES_DB: harmattan
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U harmattan -d harmattan']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://harmattan:harmattan@db:5432/harmattan?schema=public
+      PORT: 3000
+      FX_PROVIDER_URL: https://open.er-api.com/v6/latest/USD
+      FX_PROVIDER_TIMEOUT_MS: 3000
+      FX_CACHE_TTL_SECONDS: 300
+      FX_FAILURE_BACKOFF_SECONDS: 30
+    ports:
+      - '${API_PORT:-3000}:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/health || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
