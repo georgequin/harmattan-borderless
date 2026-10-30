@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { RatesModule } from './rates/rates.module';
+import { TransactionsModule } from './transactions/transactions.module';
 import { WalletsModule } from './wallets/wallets.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { WalletsModule } from './wallets/wallets.module';
     PrismaModule,
     RatesModule,
     WalletsModule,
+    TransactionsModule,
   ],
   controllers: [HealthController],
 })
