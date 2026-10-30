@@ -1,0 +1,124 @@
+// Harmattan data model.
+//
+// Money is stored as integer minor units (1 unit = 1_000_000 minor units, i.e. 6
+// decimal places) in NUMERIC(38,0) columns. No floats ever touch a balance.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Currency {
+  cNGN
+  cGHS
+  cXAF
+  USDx
+  EURx
+}
+
+enum TransactionType {
+  DEPOSIT
+  SWAP
+  TRANSFER
+}
+
+enum TransactionStatus {
+  COMPLETED
+}
+
+enum RateSource {
+  LIVE     // fetched from the live provider for this request window
+  CACHED   // provider failed; last successfully fetched snapshot from the DB
+  FALLBACK // provider failed and no snapshot exists; static rate table
+  IDENTITY // same-currency movement, rate is exactly 1
+}
+
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String?  @unique
+  phone     String?  @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  balances      Balance[]
+  ledgerEntries LedgerEntry[]
+  sent          Transaction[] @relation("source_wallet")
+  received      Transaction[] @relation("destination_wallet")
+
+  @@map("wallets")
+}
+
+// One row per (wallet, currency), created eagerly with the wallet so that balance
+// updates never race on an insert. A CHECK constraint (see migration) forbids
+// negative amounts at the database level.
+model Balance {
+  walletId  String   @map("wallet_id") @db.Uuid
+  currency  Currency
+  amount    Decimal  @default(0) @db.Decimal(38, 0)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@id([walletId, currency])
+  @@map("balances")
+}
+
+model Transaction {
+  id                  String            @id @default(uuid()) @db.Uuid
+  type                TransactionType
+  status              TransactionStatus @default(COMPLETED)
+  // null for deposits (money enters from outside the system)
+  sourceWalletId      String?           @map("source_wallet_id") @db.Uuid
+  destinationWalletId String            @map("destination_wallet_id") @db.Uuid
+  sourceCurrency      Currency          @map("source_currency")
+  sourceAmount        Decimal           @map("source_amount") @db.Decimal(38, 0)
+  destinationCurrency Currency          @map("destination_currency")
+  destinationAmount   Decimal           @map("destination_amount") @db.Decimal(38, 0)
+  // destination units per 1 source unit, as applied
+  rate                Decimal           @db.Decimal(30, 12)
+  rateSource          RateSource        @map("rate_source")
+  rateAsOf            DateTime          @map("rate_as_of")
+  idempotencyKey      String            @unique @map("idempotency_key")
+  requestHash         String            @map("request_hash")
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  sourceWallet      Wallet?       @relation("source_wallet", fields: [sourceWalletId], references: [id])
+  destinationWallet Wallet        @relation("destination_wallet", fields: [destinationWalletId], references: [id])
+  ledgerEntries     LedgerEntry[]
+
+  @@index([sourceWalletId, createdAt(sort: Desc)])
+  @@index([destinationWalletId, createdAt(sort: Desc)])
+  @@map("transactions")
+}
+
+// Append-only journal: every balance change writes one entry. For any wallet and
+// currency, SUM(amount) over its entries equals the balance row.
+model LedgerEntry {
+  id            String   @id @default(uuid()) @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  walletId      String   @map("wallet_id") @db.Uuid
+  currency      Currency
+  amount        Decimal  @db.Decimal(38, 0) // signed: negative = debit
+  balanceAfter  Decimal  @map("balance_after") @db.Decimal(38, 0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  wallet      Wallet      @relation(fields: [walletId], references: [id])
+
+  @@index([walletId, currency])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+// Last good rate per currency from the live provider, quoted as units per 1 USD.
+// Used as the first fallback when the provider is unavailable.
+model FxRateSnapshot {
+  currency   Currency @id
+  ratePerUsd Decimal  @map("rate_per_usd") @db.Decimal(30, 12)
+  fetchedAt  DateTime @map("fetched_at")
+
+  @@map("fx_rate_snapshots")
+}
