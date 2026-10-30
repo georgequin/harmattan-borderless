@@ -148,7 +148,9 @@ export class RatesService {
 
 export function quoteFromTable(table: RateTable, from: Currency, to: Currency): Quote {
   const asOf =
-    table.refreshedAt[from] < table.refreshedAt[to] ? table.refreshedAt[from] : table.refreshedAt[to];
+    table.refreshedAt[from] < table.refreshedAt[to]
+      ? table.refreshedAt[from]
+      : table.refreshedAt[to];
   return {
     from,
     to,

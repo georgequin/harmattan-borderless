@@ -46,7 +46,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const response = exception.getResponse();
       const message =
         typeof response === 'object' && response !== null && 'message' in response
-          ? (response as { message: unknown }).message
+          ? response.message
           : exception.message;
       if (Array.isArray(message)) {
         body.code = 'VALIDATION_ERROR';

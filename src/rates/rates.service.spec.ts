@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FxRateSnapshot, Prisma, RateSource } from '@prisma/client';
 import { Currency } from '../common/currency';
@@ -64,6 +65,8 @@ function build(settings: Record<string, number> = {}) {
 }
 
 describe('RatesService', () => {
+  beforeAll(() => Logger.overrideLogger(false));
+
   it('serves live rates and persists them as a snapshot', async () => {
     const { service, prisma } = build();
     const quote = await service.quote(Currency.USDx, Currency.cNGN);

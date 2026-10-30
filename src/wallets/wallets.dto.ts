@@ -7,7 +7,9 @@ import { Currency, SUPPORTED_CURRENCIES } from '../common/currency';
 export class CreateWalletDto {
   @ApiPropertyOptional({ example: 'ada@example.com', description: 'Email or phone is required' })
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail()
   @MaxLength(254)
   email?: string;
@@ -17,11 +19,12 @@ export class CreateWalletDto {
     description: 'E.164 format. Spaces, dashes and brackets are ignored.',
   })
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.replace(/[\s\-()]/g, '') : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.replace(/[\s\-()]/g, '') : value,
+  )
   @Matches(/^\+[1-9]\d{7,14}$/, { message: 'phone must be in E.164 format, e.g. +2348012345678' })
   phone?: string;
 }
-
 
 export class BalanceDto {
   @ApiProperty({ enum: SUPPORTED_CURRENCIES, example: 'cNGN' })

@@ -33,7 +33,10 @@ export class SwapDto {
   @IsEnum(SUPPORTED_CURRENCIES)
   toCurrency: Currency;
 
-  @ApiProperty({ ...AMOUNT_DOC, description: `Amount of fromCurrency to sell. ${AMOUNT_DOC.description}` })
+  @ApiProperty({
+    ...AMOUNT_DOC,
+    description: `Amount of fromCurrency to sell. ${AMOUNT_DOC.description}`,
+  })
   @Matches(AMOUNT_RULE, { message: AMOUNT_MESSAGE })
   amount: string;
 }
@@ -56,7 +59,10 @@ export class TransferDto {
   @IsEnum(SUPPORTED_CURRENCIES)
   toCurrency?: Currency;
 
-  @ApiProperty({ ...AMOUNT_DOC, description: `Amount of fromCurrency to send. ${AMOUNT_DOC.description}` })
+  @ApiProperty({
+    ...AMOUNT_DOC,
+    description: `Amount of fromCurrency to send. ${AMOUNT_DOC.description}`,
+  })
   @Matches(AMOUNT_RULE, { message: AMOUNT_MESSAGE })
   amount: string;
 }

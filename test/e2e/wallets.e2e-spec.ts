@@ -81,7 +81,11 @@ describe('Wallets (e2e)', () => {
     const byCurrency = Object.fromEntries(
       balances.body.balances.map((b: { currency: string }) => [b.currency, b]),
     );
-    expect(byCurrency.cNGN).toEqual({ currency: 'cNGN', amount: '1600.000000', usdValue: '1.000000' });
+    expect(byCurrency.cNGN).toEqual({
+      currency: 'cNGN',
+      amount: '1600.000000',
+      usdValue: '1.000000',
+    });
     expect(byCurrency.EURx.usdValue).toBe('12.500000');
     expect(byCurrency.cGHS.usdValue).toBe('0.000000');
     expect(balances.body.totalUsd).toBe('13.500000');

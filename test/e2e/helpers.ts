@@ -48,7 +48,8 @@ export async function createTestApp(): Promise<TestContext> {
 
   const app = moduleRef.createNestApplication<INestApplication<App>>({ logger: false });
   configureApp(app);
-  await app.init();
+  // Listen once on a random port so parallel supertest calls share one server.
+  await app.listen(0);
 
   return {
     app,

@@ -56,7 +56,9 @@ export class WalletTransactionsController {
   @IdempotencyHeaderDoc
   @ApiCreatedResponse({ type: TransactionResponseDto })
   @ApiOkResponse({ type: TransactionResponseDto, description: 'Idempotent replay' })
-  @ApiBadRequestResponse({ description: 'VALIDATION_ERROR, INVALID_AMOUNT, IDEMPOTENCY_KEY_REQUIRED' })
+  @ApiBadRequestResponse({
+    description: 'VALIDATION_ERROR, INVALID_AMOUNT, IDEMPOTENCY_KEY_REQUIRED',
+  })
   @ApiNotFoundResponse({ description: 'WALLET_NOT_FOUND' })
   @ApiUnprocessableEntityResponse({ description: 'IDEMPOTENCY_KEY_REUSED' })
   async deposit(
